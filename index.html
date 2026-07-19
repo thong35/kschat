@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>KSChat</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/chat-app-32x32.png">
+  <link rel="manifest" href="chat-app-site.webmanifest">
+</head>
+<body>
+  <div id="app">
+    <!-- LOGIN -->
+    <div id="loginPage" class="card">
+      <h2>Welcome — Sign in</h2>
+      <input id="emailInput" type="email" placeholder="Email address" />
+      <input id="passwordInput" type="password" placeholder="Password" />
+      <button id="loginBtn">Sign in / Register</button>
+    </div>
+
+    <!-- CHAT -->
+    <div id="chatPage" style="display:none;">
+      <header class="chat-header">
+        <div>
+          <strong id="meLabel"></strong><br>
+          <small id="meEmail"></small>
+        </div>
+        <div class="header-actions">
+          <button id="logoutBtn">Logout</button>
+        </div>
+      </header>
+
+      <div class="main">
+        <!-- Contacts panel -->
+        <aside class="users-panel">
+          <h3>Contacts</h3>
+          <ul id="usersList" class="users-list"></ul>
+        </aside>
+
+        <!-- Chat panel -->
+        <section class="chat-panel">
+          <div id="messages" class="messages"></div>
+
+          <div class="composer">
+            <input id="msgInput" placeholder="Type a message..." />
+            <button id="sendBtn">Send</button>
+          </div>
+
+          <!-- Extra features -->
+          <div class="attachments">
+            <input type="file" id="videoInput" accept="video/*">
+            <input type="file" id="voiceInput" accept="audio/*">
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
