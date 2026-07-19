@@ -2,12 +2,13 @@
 document.addEventListener("DOMContentLoaded", () => {
   // ===== Replace with your Firebase config =====
   const firebaseConfig = {
-    apiKey: "REPLACE_WITH_YOURS",
-    authDomain: "REPLACE_WITH_YOURS",
-    projectId: "REPLACE_WITH_YOURS",
-    storageBucket: "REPLACE_WITH_YOURS",
-    messagingSenderId: "REPLACE_WITH_YOURS",
-    appId: "REPLACE_WITH_YOURS"
+    apiKey: "AIzaSyBiYs2o2hM6SJultzG-EnahT0vkn5Njtsc",
+    authDomain: "kschat-8baec.firebaseapp.com",
+    projectId: "kschat-8baec",
+    storageBucket: "kschat-8baec.firebasestorage.app",
+    messagingSenderId: "225091526152",
+    appId: "1:225091526152:web:ad9e8a38abef826a1dbbbd",
+    measurementId: "G-JC85TDFCPB"
   };
   // =============================================
   firebase.initializeApp(firebaseConfig);
