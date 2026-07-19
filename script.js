@@ -1,8 +1,10 @@
 // script.js
 document.addEventListener("DOMContentLoaded", () => {
-  // ===== Replace with your Firebase config =====
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "firebase/app";
+  import { getAnalytics } from "firebase/analytics";
   const firebaseConfig = {
-    apiKey: "AIzaSyAHLfu2gN-FRYyyXxnVWCwpKNvibC5s7Sg",
+    apiKey: "AIzaSyBiYs2o2hM6SJultzG-EnahT0vkn5Njtsc",
     authDomain: "kschat-8baec.firebaseapp.com",
     projectId: "kschat-8baec",
     storageBucket: "kschat-8baec.firebasestorage.app",
@@ -10,8 +12,10 @@ document.addEventListener("DOMContentLoaded", () => {
     appId: "1:225091526152:web:ad9e8a38abef826a1dbbbd",
     measurementId: "G-JC85TDFCPB"
   };
-  // =============================================
-  firebase.initializeApp(firebaseConfig);
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
   const auth = firebase.auth();
   const db = firebase.firestore();
   const storage = firebase.storage();
