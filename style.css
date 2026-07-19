@@ -1,0 +1,184 @@
+:root {
+  --bg: #f3f5f7;
+  --card: #fff;
+  --accent: #25D366; /* WhatsApp-style green */
+  --me-bubble: #dcf8c6;
+  --friend-bubble: #ffffff;
+  --muted: #666;
+  --header: #2980b9; /* stronger header color */
+}
+
+* {
+  box-sizing: border-box;
+  font-family: Inter, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: #222;
+}
+
+.card {
+  background: var(--card);
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 420px;
+  margin: 60px auto;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  text-align: center;
+}
+
+.card input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.card button {
+  width: 100%;
+  padding: 12px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+#app {
+  max-width: 1100px;
+  margin: 18px auto;
+  padding: 10px;
+}
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px;
+  background: var(--header);
+  color: #fff;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.header-actions button {
+  background: #fff;
+  color: var(--header);
+  border: 0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.main {
+  display: flex;
+  gap: 16px;
+}
+
+.users-panel {
+  width: 220px;
+  background: var(--card);
+  padding: 12px;
+  border-radius: 8px;
+  height: 520px;
+  overflow: auto;
+}
+
+.chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.users-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.users-list li {
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 6px;
+  background: #fafafa;
+  border: 1px solid #eee;
+  transition: background 0.2s;
+}
+
+.users-list li:hover {
+  background: #f0f0f0;
+}
+
+.users-list li.selected {
+  background: #f0fff4;
+  border: 1px solid #d6f5df;
+}
+
+.messages {
+  flex: 1;
+  background: #e9eef1;
+  padding: 12px;
+  border-radius: 8px;
+  height: 440px;
+  overflow: auto;
+}
+
+.composer {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.composer input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.composer button {
+  background: var(--accent);
+  color: #fff;
+  border: 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* message bubbles */
+.msg {
+  display: block;
+  max-width: 70%;
+  padding: 10px;
+  border-radius: 12px;
+  margin: 8px 0;
+  word-wrap: break-word;
+  clear: both;
+}
+
+.msg strong {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.msg.you {
+  background: var(--me-bubble);
+  margin-left: auto;
+  text-align: right;
+}
+
+.msg.friend {
+  background: var(--friend-bubble);
+  margin-right: auto;
+  text-align: left;
+}
