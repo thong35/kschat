@@ -1,7 +1,8 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>KSChat</title>
   <link rel="stylesheet" href="style.css">
@@ -15,6 +16,7 @@
       <h2>Welcome — Sign in</h2>
       <input id="emailInput" type="email" placeholder="Email address" />
       <input id="passwordInput" type="password" placeholder="Password" />
+      <input id="displayNameInput" type="text" placeholder="Display name (optional)" />
       <button id="loginBtn">Sign in / Register</button>
     </div>
 
@@ -44,12 +46,11 @@
           <div class="composer">
             <input id="msgInput" placeholder="Type a message..." />
             <button id="sendBtn">Send</button>
-          </div>
-
-          <!-- Extra features -->
-          <div class="attachments">
-            <input type="file" id="videoInput" accept="video/*">
-            <input type="file" id="voiceInput" accept="audio/*">
+            <button id="recordBtn">🎤 Record</button>
+            <input id="voiceInput" type="file" accept="audio/*" style="display:none;">
+            <input id="videoInput" type="file" accept="video/*" style="display:none;">
+            <button id="attachVoiceBtn">Attach Voice</button>
+            <button id="attachVideoBtn">Attach Video</button>
           </div>
         </section>
       </div>
@@ -60,6 +61,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
