@@ -2,7 +2,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   // ===== Replace with your Firebase config =====
   const firebaseConfig = {
-    apiKey: "AIzaSyBiYs2o2hM6SJultzG-EnahT0vkn5Njtsc",
+    apiKey: "AIzaSyAHLfu2gN-FRYyyXxnVWCwpKNvibC5s7Sg",
     authDomain: "kschat-8baec.firebaseapp.com",
     projectId: "kschat-8baec",
     storageBucket: "kschat-8baec.firebasestorage.app",
