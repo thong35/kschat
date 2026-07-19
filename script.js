@@ -1,16 +1,15 @@
 // script.js
 document.addEventListener("DOMContentLoaded", () => {
-  // Firebase config (keep your keys)
+  // ===== Replace with your Firebase config =====
   const firebaseConfig = {
-    apiKey: "AIzaSyAHLfu2gN-FRYyyXxnVWCwpKNvibC5s7Sg",
-    authDomain: "chat-app-274e3.firebaseapp.com",
-    projectId: "chat-app-274e3",
-    storageBucket: "chat-app-274e3.firebasestorage.app",
-    messagingSenderId: "695289736732",
-    appId: "1:695289736732:web:5f38506a9a5eeef3f839d9",
-    measurementId: "G-SRLH7JPG9V"
+    apiKey: "REPLACE_WITH_YOURS",
+    authDomain: "REPLACE_WITH_YOURS",
+    projectId: "REPLACE_WITH_YOURS",
+    storageBucket: "REPLACE_WITH_YOURS",
+    messagingSenderId: "REPLACE_WITH_YOURS",
+    appId: "REPLACE_WITH_YOURS"
   };
-
+  // =============================================
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const db = firebase.firestore();
@@ -24,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const emailInput = document.getElementById("emailInput");
   const passwordInput = document.getElementById("passwordInput");
   const displayNameInput = document.getElementById("displayNameInput");
+  const keepSignedIn = document.getElementById("keepSignedIn");
   const meLabel = document.getElementById("meLabel");
   const meEmail = document.getElementById("meEmail");
   const usersList = document.getElementById("usersList");
@@ -42,22 +42,40 @@ document.addEventListener("DOMContentLoaded", () => {
   let messagesRef = null;
   let usersUnsub = null;
   let messagesUnsub = null;
-  let typingRef = null;
+  let hbTimer = null;
+  let mediaRecorder = null;
+  let recordedChunks = [];
 
-  // Auth state
+  // Default persistence: LOCAL (keep signed in) unless user unchecks
+  async function setPersistence(keep) {
+    const p = keep ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
+    try {
+      await firebase.auth().setPersistence(p);
+    } catch (e) {
+      console.warn("Persistence set failed", e);
+    }
+  }
+
+  // Initialize persistence to checkbox state
+  setPersistence(keepSignedIn.checked);
+
+  // Toggle persistence when checkbox changes
+  keepSignedIn.addEventListener("change", () => setPersistence(keepSignedIn.checked));
+
+  // Auth state listener
   auth.onAuthStateChanged(async user => {
     if (user) {
       currentUser = user;
-      // ensure user doc exists
-      const displayName = displayNameInput.value.trim() || user.displayName || user.email.split("@")[0];
+      // Ensure user doc exists and do not store full email/phone in display name
+      const displayName = (user.displayName && user.displayName.trim()) || displayNameInput.value.trim() || safeLocalPart(user.email);
       await db.collection("users").doc(user.uid).set({
-        displayName: displayName,
+        displayName,
         email: user.email,
         lastActive: Date.now()
       }, { merge: true });
 
       meLabel.textContent = displayName;
-      meEmail.textContent = user.email;
+      meEmail.textContent = ""; // hide full email in header for privacy
       loginPage.style.display = "none";
       chatPage.style.display = "block";
 
@@ -77,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Login / Register
+  // Sign in / register
   loginBtn.onclick = async () => {
     const email = emailInput.value.trim();
     const password = passwordInput.value.trim();
@@ -88,35 +106,35 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    await setPersistence(keepSignedIn.checked);
+
     try {
       let cred;
       try {
         cred = await auth.signInWithEmailAndPassword(email, password);
       } catch (err) {
         cred = await auth.createUserWithEmailAndPassword(email, password);
-        if (displayName) {
-          await cred.user.updateProfile({ displayName });
-        }
+        if (displayName) await cred.user.updateProfile({ displayName });
       }
       // onAuthStateChanged will handle UI
     } catch (err) {
       console.error(err);
-      alert("Authentication failed.");
+      alert("Authentication failed: " + (err.message || err));
     }
   };
 
   // Logout
   logoutBtn.onclick = async () => {
     if (currentUser) {
-      await db.collection("users").doc(currentUser.uid).update({ lastActive: Date.now() });
+      await db.collection("users").doc(currentUser.uid).update({ lastActive: Date.now() }).catch(()=>{});
     }
     await auth.signOut();
   };
 
   // Heartbeat to mark online
-  let hbTimer = null;
   function startHeartbeat() {
     if (!currentUser) return;
+    if (hbTimer) clearInterval(hbTimer);
     hbTimer = setInterval(() => {
       db.collection("users").doc(currentUser.uid).update({ lastActive: Date.now() }).catch(()=>{});
     }, 5000);
@@ -138,46 +156,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const li = document.createElement("li");
         li.dataset.uid = doc.id;
         li.className = "";
-        li.style.display = "flex";
-        li.style.justifyContent = "space-between";
-        li.style.alignItems = "center";
-        li.style.padding = "8px";
-        li.style.borderRadius = "6px";
-        li.style.cursor = "pointer";
-        li.style.marginBottom = "6px";
-        li.style.background = "#fafafa";
-        li.style.border = "1px solid #eee";
-
-        const left = document.createElement("div");
-        left.textContent = u.displayName || u.email.split("@")[0];
-        left.style.fontWeight = "600";
-
-        const right = document.createElement("div");
-        right.style.display = "flex";
-        right.style.alignItems = "center";
-        right.style.gap = "8px";
-
-        const dot = document.createElement("span");
-        dot.style.width = "10px";
-        dot.style.height = "10px";
-        dot.style.borderRadius = "50%";
-        const now = Date.now();
-        const ONLINE_TIMEOUT = 45000;
-        const isOnline = u.lastActive && (now - u.lastActive < ONLINE_TIMEOUT);
-        dot.style.backgroundColor = isOnline ? "#4CAF50" : "#999";
-
-        right.appendChild(dot);
-
-        li.appendChild(left);
-        li.appendChild(right);
-
+        li.innerHTML = `
+          <div style="font-weight:600">${escapeHtml(u.displayName || safeLocalPart(u.email))}</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="width:10px;height:10px;border-radius:50%;background:${isOnline(u.lastActive) ? '#4CAF50' : '#999'}"></span>
+          </div>
+        `;
         li.onclick = () => {
-          // highlight
           Array.from(usersList.children).forEach(c => c.classList.remove("selected"));
           li.classList.add("selected");
           startChat(doc.id, u);
         };
-
         usersList.appendChild(li);
       });
 
@@ -190,12 +179,36 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Start chat
+  // Helpers
+  function safeLocalPart(email) {
+    if (!email) return "User";
+    return email.split("@")[0].replace(/[^\w.-]/g, "");
+  }
+  function isOnline(lastActive) {
+    const now = Date.now();
+    const ONLINE_TIMEOUT = 45000;
+    return lastActive && (now - lastActive < ONLINE_TIMEOUT);
+  }
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+  }
+  function linkify(text) {
+    if (!text) return "";
+    const urlRegex = /((https?:\/\/|www\.)[^\s]+)/g;
+    return escapeHtml(text).replace(urlRegex, function(url) {
+      let href = url;
+      if (!href.match(/^https?:\/\//)) href = 'https://' + href;
+      return `<a href="${href}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
+    });
+  }
+
+  // Start chat with selected contact
   function startChat(otherUid, otherUser) {
     if (!currentUser) return;
     activeChatId = [currentUser.uid, otherUid].sort().join("_");
-    if (messagesUnsub) messagesUnsub();
     messagesRef = db.collection("chats").doc(activeChatId).collection("messages");
+    if (messagesUnsub) messagesUnsub();
     loadMessages();
   }
 
@@ -211,17 +224,16 @@ document.addEventListener("DOMContentLoaded", () => {
       type: "text",
       text,
       senderUid: currentUser.uid,
-      senderName: currentUser.displayName || currentUser.email.split("@")[0],
+      senderName: currentUser.displayName || safeLocalPart(currentUser.email),
       time: Date.now()
     });
     msgInput.value = "";
   };
 
-  // Attach voice/video buttons
+  // Attach buttons
   attachVoiceBtn.onclick = () => voiceInput.click();
   attachVideoBtn.onclick = () => videoInput.click();
 
-  // Handle file selection
   voiceInput.addEventListener("change", async (e) => {
     const file = e.target.files[0];
     if (!file || !currentUser || !messagesRef) return;
@@ -236,14 +248,13 @@ document.addEventListener("DOMContentLoaded", () => {
     videoInput.value = "";
   });
 
-  // Upload media to Firebase Storage and send message with URL
+  // Upload media and send message
   async function uploadMediaAndSend(file, mediaType) {
     const id = db.collection("_").doc().id;
-    const ext = file.name.split(".").pop();
-    const path = `media/${activeChatId}/${id}.${ext}`;
+    const ext = (file.name.split(".").pop() || "").split("?")[0];
+    const path = `media/${activeChatId}/${id}.${ext || (mediaType === 'audio' ? 'webm' : 'mp4')}`;
     const ref = storage.ref().child(path);
     const uploadTask = ref.put(file);
-    // simple progress UI (console)
     uploadTask.on("state_changed",
       snapshot => {
         const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
@@ -260,14 +271,14 @@ document.addEventListener("DOMContentLoaded", () => {
           mediaURL: url,
           mediaName: file.name,
           senderUid: currentUser.uid,
-          senderName: currentUser.displayName || currentUser.email.split("@")[0],
+          senderName: currentUser.displayName || safeLocalPart(currentUser.email),
           time: Date.now()
         });
       }
     );
   }
 
-  // Load messages and render (handles text, audio, video)
+  // Load messages and render
   function loadMessages() {
     messagesDiv.innerHTML = "";
     messagesUnsub = messagesRef.orderBy("time").onSnapshot(snapshot => {
@@ -275,28 +286,27 @@ document.addEventListener("DOMContentLoaded", () => {
       snapshot.forEach(doc => {
         const m = doc.data();
         const msgBox = document.createElement("div");
-        msgBox.className = "msg";
-        const isMe = m.senderUid === currentUser.uid;
-        msgBox.classList.add(isMe ? "you" : "friend");
+        msgBox.className = "msg " + (m.senderUid === currentUser.uid ? "you" : "friend");
 
         const header = document.createElement("strong");
-        header.textContent = m.senderName || "Unknown";
+        header.textContent = m.senderName || "User";
         msgBox.appendChild(header);
 
         if (m.type === "text") {
           const textLine = document.createElement("div");
-          textLine.textContent = m.text;
-          textLine.style.fontSize = "16px";
+          textLine.innerHTML = linkify(m.text);
           msgBox.appendChild(textLine);
         } else if (m.type === "audio") {
           const audio = document.createElement("audio");
           audio.controls = true;
+          audio.preload = "metadata";
           audio.src = m.mediaURL;
           audio.style.maxWidth = "100%";
           msgBox.appendChild(audio);
         } else if (m.type === "video") {
           const video = document.createElement("video");
           video.controls = true;
+          video.preload = "metadata";
           video.src = m.mediaURL;
           video.style.maxWidth = "100%";
           video.style.borderRadius = "8px";
@@ -306,8 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const timeLine = document.createElement("div");
         const d = new Date(m.time);
         timeLine.textContent = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-        timeLine.style.fontSize = "11px";
-        timeLine.style.color = "#999";
+        timeLine.className = "muted";
         timeLine.style.marginTop = "6px";
         msgBox.appendChild(timeLine);
 
@@ -317,17 +326,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Optional: simple recording via MediaRecorder (browser support required)
-  let mediaRecorder = null;
-  let recordedChunks = [];
+  // Simple in-browser voice recording (MediaRecorder)
   recordBtn.onclick = async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       alert("Recording not supported in this browser.");
       return;
     }
+    if (!messagesRef) {
+      alert("Select a contact first.");
+      return;
+    }
     if (mediaRecorder && mediaRecorder.state === "recording") {
       mediaRecorder.stop();
-      recordBtn.textContent = "🎤 Record";
+      recordBtn.textContent = "● Record";
       return;
     }
     try {
@@ -340,11 +351,6 @@ document.addEventListener("DOMContentLoaded", () => {
       mediaRecorder.onstop = async () => {
         const blob = new Blob(recordedChunks, { type: "audio/webm" });
         const file = new File([blob], `voice-${Date.now()}.webm`, { type: blob.type });
-        // send as voice message
-        if (!messagesRef) {
-          alert("Select a contact first.");
-          return;
-        }
         await uploadMediaAndSend(file, "audio");
       };
       mediaRecorder.start();
@@ -361,4 +367,4 @@ document.addEventListener("DOMContentLoaded", () => {
       await db.collection("users").doc(currentUser.uid).update({ lastActive: Date.now() }).catch(()=>{});
     }
   });
-});;
+});
